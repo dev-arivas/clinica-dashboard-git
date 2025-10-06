@@ -101,24 +101,24 @@ $conn->close();
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
-                        <?php foreach ($citas as $cita): ?>
-                        <tr>
-                            <td class="px-6 py-4 whitespace-nowrap"><?php echo date('d/m/Y H:i', strtotime($cita['fecha'])); ?></td>
-                            <td class="px-6 py-4 whitespace-nowrap"><?php echo htmlspecialchars($cita['nombre'] . ' ' . $cita['apellido']); ?></td>
-                            <td class="px-6 py-4 whitespace-nowrap"><?php echo htmlspecialchars($cita['motivo']); ?></td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                    <?php 
-                                        if ($cita['estado'] == 'confirmada') echo 'bg-green-100 text-green-800';
-                                        else if ($cita['estado'] == 'cancelada') echo 'bg-red-100 text-red-800';
-                                        else echo 'bg-yellow-100 text-yellow-800';
-                                    ?>">
-                                    <?php echo ucfirst($cita['estado']); ?>
-                                </span>
-                            </td>
-                        </tr>
-                        <?php endforeach; ?>
-                    </tbody>
+    <?php foreach ($citas as $cita): ?>
+    <tr class="<?php echo $cita['estado'] == 'pendiente' ? 'bg-yellow-50' : 'bg-white'; ?>"> 
+        <td class="px-6 py-4 whitespace-nowrap"><?php echo date('d/m/Y H:i', strtotime($cita['fecha'])); ?></td>
+        <td class="px-6 py-4 whitespace-nowrap"><?php echo htmlspecialchars($cita['nombre'] . ' ' . $cita['apellido']); ?></td>
+        <td class="px-6 py-4 whitespace-nowrap"><?php echo htmlspecialchars($cita['motivo']); ?></td>
+        <td class="px-6 py-4 whitespace-nowrap">
+            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                <?php 
+                    if ($cita['estado'] == 'confirmada') echo 'bg-green-100 text-green-800';
+                    else if ($cita['estado'] == 'cancelada') echo 'bg-red-100 text-red-800';
+                    else echo 'bg-yellow-100 text-yellow-800';
+                ?>">
+                <?php echo ucfirst($cita['estado']); ?>
+            </span>
+        </td>
+    </tr>
+    <?php endforeach; ?>
+</tbody>
                 </table>
             </div>
         </main>
