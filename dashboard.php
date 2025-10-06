@@ -24,9 +24,10 @@ $userRole = $_SESSION['user_role'];
         <aside class="w-64 bg-gray-800 h-screen p-4 text-white">
             <h1 class="text-xl font-bold mb-6">Clínica Dashboard</h1>
             <p class="text-sm text-gray-400 mb-4">Bienvenido, <?php echo $userName; ?> (<?php echo $userRole; ?>)</p>
-            <ul>
+           <ul>
                 <li class="mb-2"><a href="dashboard.php" class="block p-2 rounded bg-gray-700">Inicio</a></li>
-                <li class="mb-2"><a href="logout.php" class="block p-2 rounded hover:bg-red-700 bg-red-500">Cerrar Sesión</a></li>
+                <li class="mb-2"><a href="pacientes.php" class="block p-2 rounded hover:bg-gray-700">Pacientes</a></li>
+                <li class="mb-2"><a href="citas.php" class="block p-2 rounded hover:bg-gray-700">Citas</a></li> <li class="mb-2"><a href="logout.php" class="block p-2 rounded hover:bg-red-700 bg-red-500">Cerrar Sesión</a></li>
             </ul>
         </aside>
         <main class="flex-1 p-8">
