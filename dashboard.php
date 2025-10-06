@@ -6,16 +6,9 @@ if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit;
 }
-include('db_connection.php');
-
 $userName = $_SESSION['user_name'];
 $userRole = $_SESSION['user_role'];
-
-// LÓGICA DE MÉTRICAS
-$total_pacientes = $conn->query("SELECT COUNT(id) AS total FROM pacientes")->fetch_assoc()['total'];
-$citas_pendientes = $conn->query("SELECT COUNT(id) AS total FROM citas WHERE estado = 'pendiente'")->fetch_assoc()['total'];
-$citas_mes = $conn->query("SELECT COUNT(id) AS total FROM citas WHERE MONTH(fecha) = MONTH(CURRENT_DATE()) AND YEAR(fecha) = YEAR(CURRENT_DATE())")->fetch_assoc()['total'];
-$conn->close();
+// No necesitamos la conexión a la DB aquí, solo a data.php
 ?>
 
 <!DOCTYPE html>
@@ -39,56 +32,86 @@ $conn->close();
                 <li class="mb-2"><a href="logout.php" class="block p-2 rounded hover:bg-red-700 bg-red-500">Cerrar Sesión</a></li>
             </ul>
         </aside>
+        
         <main class="flex-1 p-8">
-            <h1 class="text-3xl font-bold text-gray-800 mb-8">Resumen General</h1>
+            <h1 class="text-3xl font-bold text-gray-800 mb-8">Resumen General y Métricas</h1>
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500">
                     <p class="text-gray-500">Total Pacientes</p>
-                    <p class="text-3xl font-bold text-gray-900"><?php echo $total_pacientes; ?></p>
+                    <p id="metric-pacientes" class="text-3xl font-bold text-gray-900">...</p>
                 </div>
                 <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-yellow-500">
                     <p class="text-gray-500">Citas Pendientes</p>
-                    <p class="text-3xl font-bold text-gray-900"><?php echo $citas_pendientes; ?></p>
+                    <p id="metric-pendientes" class="text-3xl font-bold text-gray-900">...</p>
                 </div>
                 <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500">
-                    <p class="text-gray-500">Citas en el Mes</p>
-                    <p class="text-3xl font-bold text-gray-900"><?php echo $citas_mes; ?></p>
+                    <p class="text-gray-500">Citas Totales (DB)</p>
+                    <p id="metric-citas-total" class="text-3xl font-bold text-gray-900">...</p>
                 </div>
             </div>
 
             <div class="bg-white p-6 rounded-lg shadow-md">
-                <h3 class="text-xl font-semibold mb-4">Métricas del Mes (Ejemplo Estático)</h3>
-                <canvas id="citasChart" class="h-80"></canvas>
+                <h3 class="text-xl font-semibold mb-4">Distribución de Citas por Estado</h3>
+                <canvas id="citasChart" class="h-96"></canvas>
             </div>
-
         </main>
     </div>
     
     <script>
-        const ctx = document.getElementById('citasChart');
+        document.addEventListener('DOMContentLoaded', () => {
+            fetch('data.php')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Rellenar las métricas de las tarjetas
+                        document.getElementById('metric-pacientes').textContent = data.metrics.total_pacientes;
+                        document.getElementById('metric-pendientes').textContent = data.metrics.citas_pendientes;
 
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'],
-                datasets: [{
-                    label: '# Citas',
-                    data: [12, 19, 3, 5, 2, 3], // Simulación de datos
-                    backgroundColor: 'rgba(59, 130, 246, 0.5)',
-                    borderColor: 'rgba(59, 130, 246, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true
+                        // Preparar datos para el gráfico
+                        const labels = data.chart_data.map(item => item.estado.charAt(0).toUpperCase() + item.estado.slice(1));
+                        const counts = data.chart_data.map(item => parseInt(item.count));
+                        
+                        // Rellenar métrica total (suma de los counts)
+                        const totalCitas = counts.reduce((a, b) => a + b, 0);
+                        document.getElementById('metric-citas-total').textContent = totalCitas;
+                        
+                        // Colores para cada estado (Pendiente, Confirmada, Cancelada)
+                        const backgroundColors = counts.map(item => {
+                            if (labels[counts.indexOf(item)] === 'Pendiente') return 'rgba(251, 191, 36, 0.7)'; // Yellow
+                            if (labels[counts.indexOf(item)] === 'Confirmada') return 'rgba(34, 197, 94, 0.7)'; // Green
+                            if (labels[counts.indexOf(item)] === 'Cancelada') return 'rgba(239, 68, 68, 0.7)'; // Red
+                            return 'rgba(156, 163, 175, 0.7)'; // Gray (Default)
+                        });
+
+                        // Inicializar el Gráfico
+                        new Chart(document.getElementById('citasChart'), {
+                            type: 'doughnut',
+                            data: {
+                                labels: labels,
+                                datasets: [{
+                                    label: '# Citas',
+                                    data: counts,
+                                    backgroundColor: backgroundColors,
+                                    hoverOffset: 4
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { position: 'top' },
+                                    title: { display: false }
+                                }
+                            }
+                        });
+                    } else {
+                        console.error('Error al cargar datos:', data);
                     }
-                }
-            }
+                })
+                .catch(error => {
+                    console.error('Error de red o parseo:', error);
+                });
         });
     </script>
 </body>
