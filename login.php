@@ -10,27 +10,45 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = $_POST['email'] ?? '';
     $password = $_POST['password'] ?? '';
 
+    // 1. Preparar la consulta SQL
     $stmt = $conn->prepare("SELECT id, nombre, password_hash, rol FROM usuarios WHERE email = ?");
-    $stmt->bind_param("s", $email);
-    $stmt->execute();
-    $result = $stmt->get_result();
     
-    if ($result->num_rows === 1) {
-        $user = $result->fetch_assoc();
-        // NOTA: Usamos la contraseña simple '123456' para esta práctica.
-        if ($password === $user['password_hash']) { 
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['user_name'] = $user['nombre'];
-            $_SESSION['user_role'] = $user['rol'];
-            header("Location: dashboard.php");
-            exit;
-        } else {
-            $error = "Contraseña incorrecta.";
-        }
+    // Verificar si la preparación falló
+    if (!$stmt) {
+        // Esto indica un problema de sintaxis SQL o de la configuración del servidor
+        $error = "Error interno (SQL prepare fail): " . $conn->error;
     } else {
-        $error = "Usuario no encontrado.";
+        // 2. Vincular parámetros y ejecutar
+        $stmt->bind_param("s", $email);
+        
+        // Verificar si la ejecución falló
+        if (!$stmt->execute()) {
+            $error = "Error al ejecutar la consulta: " . $stmt->error;
+        } else {
+            // 3. Obtener resultado
+            $result = $stmt->get_result();
+            
+            if ($result->num_rows === 1) {
+                $user = $result->fetch_assoc();
+                
+                // 4. Verificación de Contraseña
+                // NOTA: Usamos comparación directa (===) porque '123456' está en texto plano en la DB.
+                if ($password === $user['password_hash']) { 
+                    // ÉXITO: Iniciar sesión
+                    $_SESSION['user_id'] = $user['id'];
+                    $_SESSION['user_name'] = $user['nombre'];
+                    $_SESSION['user_role'] = $user['rol'];
+                    header("Location: dashboard.php");
+                    exit;
+                } else {
+                    $error = "Contraseña incorrecta.";
+                }
+            } else {
+                $error = "Usuario no encontrado.";
+            }
+        }
+        $stmt->close();
     }
-    $stmt->close();
 }
 $conn->close();
 ?>
@@ -46,9 +64,9 @@ $conn->close();
 <body class="bg-gray-100 flex items-center justify-center min-h-screen">
     <div class="w-full max-w-md">
         <div class="bg-white shadow-xl rounded-lg px-8 pt-6 pb-8 mb-4">
-            <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Iniciar Sesión</h2>
+            <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Iniciar Sesión 🏥</h2>
             <?php if ($error): ?>
-                <p class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4"><?php echo $error; ?></p>
+                <p class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4 font-semibold text-sm"><?php echo $error; ?></p>
             <?php endif; ?>
             <form action="login.php" method="POST">
                 <div class="mb-4">
